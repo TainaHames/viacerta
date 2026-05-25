@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus — Viacerta</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --navy: #0d1b2e;
+    --navy-card: #112240;
+    --navy-border: #1e3a5f;
+    --navy-hover: #1a2f4a;
+    --teal: #00c896;
+    --teal-dim: #00c89618;
+    --amber: #f5a623;
+    --text-primary: #e8f0fe;
+    --text-secondary: #7a9cc4;
+    --text-muted: #4a6a8a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--navy);
+    font-family: 'Inter', sans-serif;
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .brand {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .2em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 40px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .brand span { color: var(--teal); font-size: 14px; font-weight: 700; letter-spacing: .1em; }
+  .brand .sep { color: var(--navy-border); }
+
+  .logo-wrap {
+    width: 64px;
+    height: 64px;
+    background: var(--teal-dim);
+    border: 1px solid #00c89633;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    margin-bottom: 20px;
+  }
+
+  h1 {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+    text-align: center;
+  }
+
+  .subtitle {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 40px;
+    text-align: center;
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    width: 100%;
+    max-width: 520px;
+  }
+
+  .card {
+    background: var(--navy-card);
+    border: 1px solid var(--navy-border);
+    border-radius: 14px;
+    padding: 28px 24px;
+    text-decoration: none;
+    color: inherit;
+    transition: all .2s;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+  }
+  .card:hover {
+    border-color: var(--teal);
+    background: var(--navy-hover);
+    transform: translateY(-2px);
+  }
+  .card:hover .card-arrow { color: var(--teal); }
+
+  .card-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+  .card-icon-admin { background: #1a2f1a; border: 1px solid #2a5a2a; }
+  .card-icon-op { background: #1a2040; border: 1px solid #2a3a6a; }
+
+  .card-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .card-desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+  .card-arrow {
+    font-size: 18px;
+    color: var(--text-muted);
+    margin-top: auto;
+    align-self: flex-end;
+    transition: color .2s;
+  }
+
+  .footer {
+    margin-top: 48px;
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="brand">
+  <span>NEXUS</span>
+  <span class="sep">/</span>
+  ASSESSORIA DE COBRANÇA
+</div>
+
+<div class="logo-wrap">📊</div>
+
+<h1>Ranking de operadores</h1>
+<p class="subtitle">VIACERTA · Selecione seu perfil de acesso</p>
+
+<div class="cards">
+  <a class="card" href="/nexus_viacerta_admin.html">
+    <div class="card-icon card-icon-admin">⚙️</div>
+    <div>
+      <div class="card-title">Administrador</div>
+      <div class="card-desc">Upload de arquivos, processamento e publicação do ranking para a equipe.</div>
+    </div>
+    <div class="card-arrow">→</div>
+  </a>
+  <a class="card" href="/nexus_viacerta_operacao.html">
+    <div class="card-icon card-icon-op">👥</div>
+    <div>
+      <div class="card-title">Operação</div>
+      <div class="card-desc">Visualização em tempo real do ranking publicado pelo administrador.</div>
+    </div>
+    <div class="card-arrow">→</div>
+  </a>
+</div>
+
+<div class="footer">
+  Nexus Assessoria de Cobrança · Acesso restrito à equipe interna
+</div>
+
+</body>
+</html>
