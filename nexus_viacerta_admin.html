@@ -58,6 +58,18 @@
   .btn-sort.active{background:var(--teal);border-color:var(--teal);color:#001a10;font-weight:600}
   .btn-export{background:transparent;border:1px solid var(--navy-border);color:var(--text-secondary);font-size:12px;font-family:'Inter',sans-serif;padding:6px 14px;border-radius:20px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s}
   .btn-export:hover{border-color:var(--blue-soft);color:var(--blue-soft)}
+  .btn-reset{background:transparent;border:1px solid #e8485544;color:#e84855;font-size:13px;font-weight:500;font-family:'Inter',sans-serif;padding:10px 18px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .2s}
+  .btn-reset:hover{background:#e8485518;border-color:var(--red)}
+  .modal-overlay{display:none;position:fixed;inset:0;background:#00000088;z-index:100;align-items:center;justify-content:center}
+  .modal-overlay.show{display:flex}
+  .modal{background:var(--navy-card);border:1px solid var(--navy-border);border-radius:14px;padding:32px;max-width:420px;width:100%;margin:20px}
+  .modal-title{font-size:17px;font-weight:600;margin-bottom:8px}
+  .modal-desc{font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:24px}
+  .modal-btns{display:flex;gap:10px;justify-content:flex-end}
+  .btn-cancel{background:transparent;border:1px solid var(--navy-border);color:var(--text-secondary);font-size:13px;font-family:'Inter',sans-serif;padding:9px 18px;border-radius:8px;cursor:pointer;transition:all .2s}
+  .btn-cancel:hover{border-color:var(--text-secondary);color:var(--text-primary)}
+  .btn-confirm-reset{background:var(--red);color:#fff;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;border:none;padding:9px 18px;border-radius:8px;cursor:pointer;transition:all .2s}
+  .btn-confirm-reset:hover{background:#c73040}
   .table-wrap{background:var(--navy-card);border:1px solid var(--navy-border);border-radius:12px;overflow:hidden}
   table{width:100%;border-collapse:collapse}
   thead th{padding:12px 16px;font-size:10px;font-weight:600;letter-spacing:.1em;color:var(--text-muted);text-transform:uppercase;text-align:left;border-bottom:1px solid var(--navy-border);background:#0a1628}
@@ -126,7 +138,10 @@
 
   <div class="status-bar">
     <div class="status-msg" id="status-msg"><span style="color:var(--text-muted)">○</span> Aguardando arquivos para processar.</div>
+    <div style="display:flex;gap:10px">
+    <button class="btn-reset" id="btn-reset" onclick="abrirModalReinicio()">↺ Reiniciar ciclo</button>
     <button class="btn-publish" id="btn-publish" disabled onclick="publicarDados()">⬆ Publicar para operação</button>
+  </div>
   </div>
 
   <div id="metrics-section" style="display:none">
@@ -359,6 +374,58 @@
     a.href=url;a.download='ranking_viacerta.csv';a.click();
     URL.revokeObjectURL(url);
   }
+
+  async function reiniciarCiclo(){
+    const btn = document.getElementById('btn-confirm-reset');
+    btn.disabled = true;
+    btn.textContent = 'Arquivando...';
+    try{
+      // Busca ranking atual do Firebase
+      const snap = await db.ref('ranking/atual').get();
+      const atual = snap.val();
+      if(atual){
+        // Salva no histórico com chave do mês
+        const agora = new Date();
+        const chave = agora.toLocaleString('pt-BR',{month:'long',year:'numeric'}).replace(' de ',' ').replace(' ','-').toLowerCase();
+        const label = agora.toLocaleString('pt-BR',{month:'long',year:'numeric'});
+        await db.ref('ranking/historico/'+chave).set({...atual, label});
+      }
+      // Limpa ranking atual
+      await db.ref('ranking/atual').remove();
+      fecharModal();
+      document.getElementById('status-msg').innerHTML='<span style="color:var(--teal)">✓</span> Ciclo reiniciado. Histórico salvo.';
+      document.getElementById('badge-updated').classList.remove('show');
+      document.getElementById('metrics-section').style.display='none';
+      document.getElementById('empty-state').style.display='block';
+      document.getElementById('btn-publish').disabled=true;
+      dadosRanking=[];
+      payloadAtual=null;
+      arquivos={analytic:null,metas:null};
+      document.getElementById('status-analytic').textContent='Nenhum arquivo selecionado';
+      document.getElementById('status-analytic').classList.add('empty');
+      document.getElementById('status-metas').textContent='Nenhum arquivo selecionado';
+      document.getElementById('status-metas').classList.add('empty');
+    }catch(err){
+      document.getElementById('status-msg').innerHTML='<span style="color:var(--red)">✗</span> Erro ao reiniciar: '+err.message;
+      fecharModal();
+    }
+  }
+
+  function abrirModalReinicio(){ document.getElementById('modal-reinicio').classList.add('show'); }
+  function fecharModal(){ document.getElementById('modal-reinicio').classList.remove('show'); }
 </script>
+
+<!-- MODAL REINÍCIO -->
+<div class="modal-overlay" id="modal-reinicio">
+  <div class="modal">
+    <div class="modal-title">⚠ Reiniciar ciclo</div>
+    <div class="modal-desc">O ranking atual será <strong>arquivado</strong> com o nome do mês e um novo ciclo será iniciado.<br><br>Esta ação não pode ser desfeita. Deseja continuar?</div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="fecharModal()">Cancelar</button>
+      <button class="btn-confirm-reset" id="btn-confirm-reset" onclick="reiniciarCiclo()">Sim, reiniciar ciclo</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

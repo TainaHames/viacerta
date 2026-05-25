@@ -67,6 +67,13 @@
   .empty-sub{font-size:13px}
   .live-dot{width:8px;height:8px;border-radius:50%;background:var(--teal);display:inline-block;margin-right:4px;animation:pulse 2s infinite}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  .tabs-bar{display:flex;gap:4px;margin-bottom:20px;flex-wrap:wrap;border-bottom:1px solid var(--navy-border);padding-bottom:0}
+  .tab-btn{background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-muted);font-size:13px;font-family:'Inter',sans-serif;padding:10px 16px;cursor:pointer;transition:all .2s;margin-bottom:-1px;white-space:nowrap}
+  .tab-btn:hover{color:var(--text-secondary)}
+  .tab-btn.active{color:var(--teal);border-bottom-color:var(--teal);font-weight:500}
+  .tab-panel{display:none}
+  .tab-panel.active{display:block}
+  .hist-badge{background:var(--navy-card);border:1px solid var(--navy-border);border-radius:8px;padding:6px 12px;font-size:11px;color:var(--text-muted);margin-bottom:16px;display:inline-block}
 </style>
 </head>
 <body>
@@ -92,6 +99,8 @@
     </div>
     <div class="badge-updated" id="badge-atualizado" style="display:none">✓ Atualizado</div>
   </div>
+
+  <div id="tabs-bar" class="tabs-bar" style="display:none"></div>
 
   <div id="conteudo-principal" style="display:none">
     <div class="metrics-grid">
@@ -157,34 +166,98 @@
 
   function fmt(v){return 'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 
-  // Escuta em tempo real — atualiza automaticamente quando o admin publicar
-  db.ref('ranking/atual').on('value', snap => {
-    const dados = snap.val();
-    if (!dados) {
-      document.getElementById('empty-state').style.display = 'block';
-      document.getElementById('conteudo-principal').style.display = 'none';
-      document.getElementById('header-sub').textContent = 'Aguardando publicação pelo administrador.';
-      return;
+  let historicoData = {};
+  let abaAtiva = 'atual';
+
+  function renderAbas(temAtual){
+    const bar = document.getElementById('tabs-bar');
+    bar.innerHTML = '';
+    if(temAtual){
+      const btn = document.createElement('button');
+      btn.className = 'tab-btn' + (abaAtiva==='atual'?' active':'');
+      btn.textContent = '● Ranking atual';
+      btn.onclick = () => trocarAba('atual');
+      bar.appendChild(btn);
     }
+    // Histórico ordenado do mais recente pro mais antigo
+    Object.keys(historicoData).reverse().forEach(chave => {
+      const btn = document.createElement('button');
+      btn.className = 'tab-btn' + (abaAtiva===chave?' active':'');
+      btn.textContent = historicoData[chave].label || chave;
+      btn.onclick = () => trocarAba(chave);
+      bar.appendChild(btn);
+    });
+    bar.style.display = (temAtual || Object.keys(historicoData).length > 0) ? 'flex' : 'none';
+  }
 
-    dadosRanking = dados.ranking;
+  function trocarAba(chave){
+    abaAtiva = chave;
+    if(chave === 'atual'){
+      dadosRanking = rankingAtualData ? rankingAtualData.ranking : [];
+      if(rankingAtualData) carregarMetrics(rankingAtualData);
+      document.getElementById('badge-atualizado').style.display = 'inline-block';
+    } else {
+      const h = historicoData[chave];
+      dadosRanking = h.ranking;
+      carregarMetrics(h);
+      document.getElementById('badge-atualizado').style.display = 'none';
+      const at = new Date(h.atualizadoEm);
+      document.getElementById('header-sub').textContent = 'Ciclo arquivado: ' + (h.label||chave) + ' · publicado em ' + at.toLocaleDateString('pt-BR');
+    }
+    renderAbas(!!rankingAtualData);
+    renderTabela();
+  }
 
+  function carregarMetrics(dados){
     document.getElementById('m-comissao').textContent = fmt(dados.geralComissao);
     document.getElementById('m-recebido').textContent = fmt(dados.geralRecebido);
     document.getElementById('m-ops').textContent = dados.ranking.length;
     document.getElementById('m-du-rest').textContent = dados.restWD;
     document.getElementById('m-du-sub').textContent = 'de '+dados.totalWD+' úteis no ciclo';
+  }
 
-    const at = new Date(dados.atualizadoEm);
-    document.getElementById('header-sub').textContent =
-      'Atualizado em '+at.toLocaleDateString('pt-BR')+' às '+at.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+
-      ' · '+dados.workedWD+' dias úteis trabalhados de '+dados.totalWD;
+  let rankingAtualData = null;
 
-    document.getElementById('badge-atualizado').style.display = 'inline-block';
-    document.getElementById('empty-state').style.display = 'none';
-    document.getElementById('conteudo-principal').style.display = 'block';
+  // Escuta ranking atual em tempo real
+  db.ref('ranking/atual').on('value', snap => {
+    rankingAtualData = snap.val();
+    if(abaAtiva === 'atual'){
+      if (!rankingAtualData) {
+        if(Object.keys(historicoData).length === 0){
+          document.getElementById('empty-state').style.display = 'block';
+          document.getElementById('conteudo-principal').style.display = 'none';
+          document.getElementById('tabs-bar').style.display = 'none';
+          document.getElementById('header-sub').textContent = 'Aguardando publicação pelo administrador.';
+        } else {
+          // Sem ranking atual mas tem histórico — mostra primeira aba do histórico
+          abaAtiva = Object.keys(historicoData)[Object.keys(historicoData).length-1];
+          trocarAba(abaAtiva);
+        }
+        renderAbas(false);
+        return;
+      }
+      dadosRanking = rankingAtualData.ranking;
+      carregarMetrics(rankingAtualData);
+      const at = new Date(rankingAtualData.atualizadoEm);
+      document.getElementById('header-sub').textContent =
+        'Atualizado em '+at.toLocaleDateString('pt-BR')+' às '+at.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+
+        ' · '+rankingAtualData.workedWD+' dias úteis trabalhados de '+rankingAtualData.totalWD;
+      document.getElementById('badge-atualizado').style.display = 'inline-block';
+      document.getElementById('empty-state').style.display = 'none';
+      document.getElementById('conteudo-principal').style.display = 'block';
+      renderTabela();
+    }
+    renderAbas(!!rankingAtualData);
+  });
 
-    renderTabela();
+  // Escuta histórico em tempo real
+  db.ref('ranking/historico').on('value', snap => {
+    historicoData = snap.val() || {};
+    renderAbas(!!rankingAtualData);
+    if(Object.keys(historicoData).length > 0 || rankingAtualData){
+      document.getElementById('empty-state').style.display = 'none';
+      document.getElementById('conteudo-principal').style.display = 'block';
+    }
   });
 
   function renderTabela(){
